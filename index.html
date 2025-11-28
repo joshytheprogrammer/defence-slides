@@ -334,7 +334,6 @@
             height: 2px;
             background: rgba(255, 255, 255, 0.2);
             position: relative;
-        }   position: relative;
         }
 
         .data-packet {
@@ -346,6 +345,7 @@
             top: -5px;
             left: 0;
             display: none;
+            z-index: 10;
         }
 
         @keyframes transmit {
@@ -403,6 +403,51 @@
         }
 
         .citation-ref:hover .citation-tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* General Tooltip System */
+        .tooltip-term {
+            border-bottom: 1px dotted var(--accent-color);
+            cursor: help;
+            position: relative;
+        }
+
+        .tooltip-text {
+            visibility: hidden;
+            width: 280px;
+            background-color: #000000;
+            color: #F8F5F0;
+            text-align: left;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 100;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.85rem;
+            font-weight: normal;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            line-height: 1.4;
+        }
+
+        .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #000000 transparent transparent transparent;
+        }
+
+        .tooltip-term:hover .tooltip-text {
             visibility: visible;
             opacity: 1;
         }
@@ -510,9 +555,9 @@
                 <div class="card fade-in delay-1">
                     <h3>Fragmented Records</h3>
                     <p><strong>95%</strong> of patient history is paper-bound.</p>
-                    <p>When a student moves from Covenant University Clinic to a PHC in Ota, the chart does not follow.</p>
+                    <p>When a student moves from Covenant University Clinic to a PHC in Ota, his history does not follow.</p>
                     <ul style="margin-top: 1rem;">
-                        <li>Duplication of labs</li>
+                        <li>Duplication of tests</li>
                         <li>Re-prescription of contraindicated drugs</li>
                         <li>Clinician starts from zero</li>
                     </ul>
@@ -527,7 +572,7 @@
                 </div>
                 <div class="card fade-in delay-3">
                     <h3>Low EHR Adoption</h3>
-                    <p>Only <strong>28%</strong> of public clinics in Ogun State run a digital system daily<span class="citation-ref">2<span class="citation-tooltip">Mugauri et al. (2025a). A decade of designing and implementing EHR in Sub-Saharan Africa.</span></span>.</p>
+                    <p>Only <strong>28%</strong> of public clinics in Sub Saharan Africa run a digital system daily<span class="citation-ref">2<span class="citation-tooltip">Mugauri et al. (2025a). A decade of designing and implementing EHR in Sub-Saharan Africa.</span></span>.</p>
                     <p>Most revert to paper when power or data bundles finish.</p>
                 </div>
                 <div class="card fade-in delay-3">
@@ -543,7 +588,7 @@
             <h2>Aim & Objectives</h2>
             <div style="background: rgba(217, 119, 6, 0.1); padding: 2rem; border-radius: 1rem; margin-bottom: 2rem; text-align: center;" class="fade-in">
                 <h3>The Aim</h3>
-                <p style="font-size: 1.3rem; color: var(--text-color);">"Design & build a proof-of-concept that lets a university clinic and a local PHC swap encrypted records in real time, but <strong>only after the patient says YES via SMS</strong>."</p>
+                <p style="font-size: 1.3rem; color: var(--text-color);">"Design & build a proof-of-concept that lets a university clinic and a local PHC exchange encrypted records in real time, but <strong>only after the patient says YES via SMS</strong>."</p>
             </div>
             
             <div class="grid-2">
@@ -551,15 +596,15 @@
                     <ul style="list-style: none;">
                         <li class="card fade-in delay-1" style="margin-bottom: 1rem;">
                             <strong>Obj 1: Requirements</strong><br>
-                            Survey of 80 simulated users. Ranked list of 27 requirements (e.g., "must work on 3G").
+                            Survey 80 simulated users to produce a ranked list of ± 27 requirements (e.g., “must work on 3G”).
                         </li>
                         <li class="card fade-in delay-2" style="margin-bottom: 1rem;">
                             <strong>Obj 2: Framework</strong><br>
-                            Modified Dubovitskaya et al. (2020)<span class="citation-ref">4<span class="citation-tooltip">Dubovitskaya et al. (2020). ACTION-EHR: Patient-centric blockchain-based EHR.</span></span> patient-centric HIE. Added SMS trigger + consent token.
+                            Adapt Dubovitskaya et al. (2020)<span class="citation-ref">4<span class="citation-tooltip">Dubovitskaya et al. (2020). ACTION-EHR: Patient-centric blockchain-based EHR.</span></span> patient-centric HIE by adding an SMS-triggered consent token.
                         </li>
                         <li class="card fade-in delay-3">
                             <strong>Obj 3: Architecture</strong><br>
-                            UML diagrams. Three actors: Admin, Clinician, Patient. Two nodes.
+                            Draw UML diagrams for three actors (Admin, Clinician, Patient) and a two-node topology.
                         </li>
                     </ul>
                 </div>
@@ -571,7 +616,7 @@
                         </li>
                         <li class="card fade-in delay-2">
                             <strong>Obj 5: Evaluation</strong><br>
-                            Think-aloud sessions, SUS questionnaire. Target: Task time ≤ 2 min, SUS ≥ 70.
+                            <span class="tooltip-term">Think-aloud sessions<span class="tooltip-text">5-6 volunteers will be asked to complete a referral task while speaking every thought out loud; I'll note where they hesitate or get lost.</span></span>, <span class="tooltip-term">SUS questionnaire.<span class="tooltip-text">After the task they'll answer the 10-item System Usability Scale (0-100).</span></span> Target: Task time <span class="tooltip-term">≤ 2 min, <span class="tooltip-text">Average task completion time ≤ 2 minutes</span> </span> SUS <span class="tooltip-term">≥ 70 <span class="tooltip-text">Average SUS score ≥ 70 (the “good” mark)</span></span>.
                         </li>
                     </ul>
                 </div>
@@ -614,21 +659,21 @@
                     <div style="background: var(--accent-color); color: #000; padding: 0.5rem 1rem; border-radius: 50%; font-weight: bold;">1</div>
                     <div>
                         <strong>Requirements</strong>
-                        <p style="margin: 0; font-size: 0.9rem;">PRISMA search (42 papers) → 27 variables. Survey Cronbach α = 0.81.</p>
+                        <p style="margin: 0; font-size: 0.9rem;">Combine literature review with user surveys to lock down the must-have requirements.</p>
                     </div>
                 </div>
                 <div class="card fade-in delay-1" style="display: flex; gap: 1rem; align-items: center;">
                     <div style="background: var(--accent-color); color: #000; padding: 0.5rem 1rem; border-radius: 50%; font-weight: bold;">2</div>
                     <div>
                         <strong>Framework Tweak</strong>
-                        <p style="margin: 0; font-size: 0.9rem;">Added "SMS Consent Manager" micro-service. Validated by experts.</p>
+                        <p style="margin: 0; font-size: 0.9rem;">Add "SMS Consent Manager" micro-service to the model proposed in Dubovitskaya et al. (2020). Validated by experts.</p>
                     </div>
                 </div>
                 <div class="card fade-in delay-2" style="display: flex; gap: 1rem; align-items: center;">
                     <div style="background: var(--accent-color); color: #000; padding: 0.5rem 1rem; border-radius: 50%; font-weight: bold;">3</div>
                     <div>
                         <strong>Design</strong>
-                        <p style="margin: 0; font-size: 0.9rem;">ISO/IEC 25010 model. Threat modelling via STRIDE (24 abuse cases).</p>
+                        <p style="margin: 0; font-size: 0.9rem;">Will sketch UI wireframes and map the step-by-step data flow between the two hospitals.</p>
                     </div>
                 </div>
                 <div class="card fade-in delay-2" style="display: flex; gap: 1rem; align-items: center;">
@@ -642,7 +687,7 @@
                     <div style="background: var(--accent-color); color: #000; padding: 0.5rem 1rem; border-radius: 50%; font-weight: bold;">5</div>
                     <div>
                         <strong>Evaluate</strong>
-                        <p style="margin: 0; font-size: 0.9rem;">Localhost deployment. Ethics clearance CU/ISTEC/2025/004.</p>
+                        <p style="margin: 0; font-size: 0.9rem;">Localhost deployment. </p>
                     </div>
                 </div>
             </div>
@@ -774,6 +819,7 @@
                             <li>✓ Audit trail (Who, What, When, GPS)</li>
                             <li>✓ Offline queue (SMS queued in SQLite)</li>
                             <li>✓ English + Yoruba templates</li>
+                            <li>✓ Telegram integration to simplify process</li>
                         </ul>
                     </div>
                     <div class="card fade-in delay-1">
@@ -964,23 +1010,23 @@
             <div class="grid-2">
                 <div class="card fade-in delay-1">
                     <h3>Real-World Simulation</h3>
-                    <p><strong>Environment:</strong> Tested on 3G Network (Airtel Hotspot, ~1.2 Mbps) to mimic rural PHC conditions.</p>
+                    <p><strong>Environment:</strong> Will test on 3G network (Airtel Hotspot, ~1.2 Mbps) to mimic rural PHC conditions.</p>
                     <p><strong>Hardware:</strong> Standard laptop server + Feature phones for SMS consent.</p>
                 </div>
                 <div class="card fade-in delay-1">
                     <h3>Usability Study</h3>
-                    <p><strong>Participants:</strong> 13 Users (Clinicians & Patients).</p>
-                    <p><strong>Outcome:</strong> System Usability Scale (SUS) score of <strong>78.5</strong> ("Good"), confirming ease of use for non-technical staff.</p>
+                    <p><strong>Target:</strong> 13 users (Clinicians & Patients).</p>
+                    <p><strong>Goal:</strong> Achieve System Usability Scale (SUS) score ≥ 70 ("Good"), confirming ease of use for non-technical staff.</p>
                 </div>
                 <div class="card fade-in delay-2">
-                    <h3>Performance Metrics</h3>
-                    <p><strong>Latency:</strong> End-to-end decryption took <strong>1.28s</strong> (median).</p>
-                    <p><strong>Reliability:</strong> 100% SMS delivery rate across 39 test scenarios.</p>
+                    <h3>Performance Targets</h3>
+                    <p><strong>Latency:</strong> Aim for end-to-end decryption ≤ 2 seconds (median).</p>
+                    <p><strong>Reliability:</strong> Target 100% SMS delivery rate across 39 test scenarios.</p>
                 </div>
                 <div class="card fade-in delay-2">
-                    <h3>Security Validation</h3>
-                    <p><strong>Encryption:</strong> Verified AES-256 decryption only occurs <em>after</em> SMS confirmation.</p>
-                    <p><strong>Access Control:</strong> Confirmed automatic token revocation after exactly 5 minutes.</p>
+                    <h3>Security Validation Plan</h3>
+                    <p><strong>Encryption:</strong> Will verify AES-256 decryption only occurs after SMS confirmation.</p>
+                    <p><strong>Access Control:</strong> Will confirm automatic token revocation after exactly 5 minutes.</p>
                 </div>
             </div>
         </section>
@@ -1017,8 +1063,8 @@
             <h2>Conclusion & Future Work</h2>
             <div class="card fade-in delay-1" style="margin-bottom: 2rem; border-left: 4px solid var(--success-color);">
                 <h3>Conclusion</h3>
-                <p>We demonstrated that <strong>AES-256 + RBAC + SMS consent</strong> is technically simple, user-friendly, and regulation-ready.</p>
-                <p>78 SUS & 1.3s latency prove feasibility on 3G.</p>
+                <p>Will demonstrate that <strong>AES-256 + RBAC + SMS consent</strong> is technically simple, user-friendly, and regulation-ready.</>
+                <p>Target: SUS ≥ 70 and latency ≤ 2s to prove feasibility on 3G.</p>
             </div>
 
             <div class="grid-2">
@@ -1041,7 +1087,7 @@
                 </div>
             </div>
             <div style="text-align: center; margin-top: 3rem;" class="fade-in delay-3">
-                <h3 style="font-style: italic; color: var(--accent-color);">"Secure sharing doesn't need the cloud – just a pocket-full of keys and a text."</h3>
+                <h3 style="font-style: italic; color: var(--accent-color);">"Your health records don't travel until you say so."</h3>
             </div>
         </section>
 
