@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Health Record Sharing Prototype</title>
+    <style>
+        :root {
+            /* New Palette */
+            --color-bg-dark: #1B4332;
+            --color-bg-light: #F8F5F0;
+            --color-accent: #D97706;
+            --color-text-dark: #1B4332;
+            --color-text-light: #F8F5F0;
+            --color-success: #2D6A4F;
+            --color-error: #BC4749;
+
+            /* Theme Mapping (Dark Mode) */
+            --bg-color: var(--color-bg-dark);
+            --text-color: var(--color-text-light);
+            --accent-color: var(--color-accent);
+            --secondary-color: rgba(248, 245, 240, 0.7);
+            --success-color: #4ADE80;
+            --danger-color: #F87171;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --slide-padding: 4rem;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow: hidden; /* Hide scrollbars, handle nav via JS */
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Navigation Controls */
+        .nav-controls {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 1000;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-color);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+            color: #fff;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            background: var(--accent-color);
+            width: 0%;
+            transition: width 0.3s ease;
+            z-index: 1000;
+        }
+
+        /* Slides Container */
+        .slides-container {
+            height: 100%;
+            width: 100%;
+            position: relative;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: var(--slide-padding);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+            transform: translateY(20px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow-y: auto; /* Allow scrolling within slide if content is long */
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+            z-index: 10;
+        }
+
+        .slide.prev {
+            transform: translateY(-100%);
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        /* Typography */
+        h1 {
+            font-size: 3.5rem;
+            line-height: 1.1;
+            margin-bottom: 1rem;
+            color: var(--text-color);
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            color: var(--accent-color);
+            border-bottom: 2px solid rgba(217, 119, 6, 0.3);
+            padding-bottom: 0.5rem;
+            display: inline-block;
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--text-color);
+        }
+
+        p, li {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: var(--secondary-color);
+            margin-bottom: 0.8rem;
+        }
+
+        ul {
+            list-style-position: inside;
+            margin-left: 1rem;
+        }
+
+        strong {
+            color: var(--text-color);
+            font-weight: 600;
+        }
+
+        /* Grid Layouts */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: var(--shadow);
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-color);
+        }
+
+        /* Interactive Elements */
+        .stat-box {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(217, 119, 6, 0.1);
+            border-radius: 1rem;
+        }
+
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            display: block;
+        }
+
+        /* Phone Mockup for Demo */
+        .phone-mockup {
+            width: 300px;
+            height: 580px;
+            background: #000;
+            border-radius: 30px;
+            border: 8px solid #333;
+            margin: 0 auto;
+            position: relative;
+            overflow: hidden;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        .phone-screen {
+            background: #fff;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .phone-header {
+            background: #f1f5f9;
+            padding: 1rem;
+            text-align: center;
+            color: #334155;
+            font-weight: bold;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .phone-body {
+            flex: 1;
+            padding: 1rem;
+            background: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            overflow-y: auto;
+        }
+
+        .msg {
+            max-width: 80%;
+            padding: 0.8rem;
+            border-radius: 1rem;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .msg-received {
+            background: #e2e8f0;
+            color: #334155;
+            align-self: flex-start;
+            border-bottom-left-radius: 0.2rem;
+        }
+
+        .msg-sent {
+            background: var(--accent-color);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 0.2rem;
+        }
+
+        .phone-controls {
+            padding: 1rem;
+            background: #fff;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .phone-btn {
+            flex: 1;
+            padding: 0.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        .btn-yes { background: var(--success-color); color: white; }
+        .btn-no { background: var(--danger-color); color: white; }
+
+        /* Code Block */
+        .code-block {
+            font-family: 'Consolas', 'Monaco', monospace;
+            background: #000000;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            color: #F8F5F0;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Animations */
+        .fade-in {
+            animation: fadeIn 0.8s ease forwards;
+            opacity: 0;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .delay-1 { animation-delay: 0.2s; }
+        .delay-2 { animation-delay: 0.4s; }
+        .delay-3 { animation-delay: 0.6s; }
+
+        /* Architecture Diagram Styles */
+        .arch-diagram {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 2rem 0;
+            position: relative;
+        }
+        
+        .arch-node {
+            background: var(--card-bg);
+            border: 2px solid var(--secondary-color);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            width: 150px;
+            z-index: 2;
+        }
+        .arch-line {
+            flex-grow: 1;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.2);
+            position: relative;
+        }   position: relative;
+        }
+
+        .data-packet {
+            width: 12px;
+            height: 12px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            position: absolute;
+            top: -5px;
+            left: 0;
+            display: none;
+        }
+
+        @keyframes transmit {
+            0% { left: 0; }
+            100% { left: 100%; }
+        }
+
+        @keyframes transmit-reverse {
+            0% { left: 100%; }
+            100% { left: 0; }
+        }
+
+        /* Citation System */
+        .citation-ref {
+            vertical-align: super;
+            font-size: 0.7em;
+            color: var(--accent-color);
+            cursor: help;
+            text-decoration: none;
+            position: relative;
+            margin-left: 2px;
+        }
+
+        .citation-tooltip {
+            visibility: hidden;
+            width: 250px;
+            background-color: #000000;
+            color: var(--color-bg-light);
+            text-align: left;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 100;
+            bottom: 150%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.85rem;
+            font-weight: normal;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            line-height: 1.4;
+        }
+
+        .citation-tooltip::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #000000 transparent transparent transparent;
+        }
+
+        .citation-ref:hover .citation-tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Collapsible References */
+        details.ref-details {
+            background: var(--card-bg);
+            border-radius: 0.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+
+        summary.ref-summary {
+            padding: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.05);
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        summary.ref-summary::-webkit-details-marker {
+            display: none;
+        }
+
+        summary.ref-summary::after {
+            content: '+';
+            font-size: 1.5rem;
+            color: var(--accent-color);
+        }
+
+        details[open] summary.ref-summary::after {
+            content: '-';
+        }
+
+        .ref-content {
+            padding: 1rem;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .ref-entry {
+            margin-bottom: 1rem;
+            padding-left: 2rem;
+            text-indent: -2rem;
+            font-size: 0.9rem;
+            color: var(--secondary-color);
+            line-height: 1.6;
+        }
+
+        /* References Scroll */
+        .ref-scroll {
+            max-height: 60vh;
+            overflow-y: auto;
+            padding-right: 1rem;
+        }
+        .ref-item {
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            color: var(--secondary-color);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 0.5rem;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="progress-bar" id="progressBar"></div>
+
+    <div class="slides-container">
+
+        <!-- SLIDE 1: TITLE -->
+        <section class="slide active" id="slide-1">
+            <div style="text-align: center; max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem;">
+                <h3 style="color: var(--accent-color); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0;">Final Year Project</h3>
+                
+                <div style="margin: 1rem 0;">
+                    <h1 style="margin-bottom: 0.5rem;">Design & Implementation of Secure Health Record Sharing</h1>
+                    <h2 style="font-size: 1.8rem; border: none; color: var(--secondary-color); margin-top: 0;">with Real-Time SMS Consent</h2>
+                </div>
+
+                <div style="margin-top: 2rem;">
+                    <p style="font-size: 1.1rem; margin-bottom: 0.5rem; color: var(--secondary-color);">Presented by</p>
+                    <p style="font-size: 1.6rem; font-weight: bold; color: var(--text-color); margin-bottom: 0.2rem;">Nsofor Chigoziri Joshua</p>
+                    <p style="font-size: 1.1rem; color: var(--accent-color); font-family: 'Consolas', monospace;">22CH032034</p>
+                </div>
+
+                <div style="margin-top: 1rem;">
+                    <p style="font-size: 1.1rem; margin-bottom: 0.2rem; color: var(--secondary-color);">Supervisor</p>
+                    <p style="font-size: 1.4rem; font-weight: bold; color: var(--text-color);">Mrs Abiodun Theresa</p>
+                </div>
+
+                <p style="margin-top: 2rem; font-size: 0.9rem; opacity: 0.7;">November 2025</p>
+            </div>
+        </section>
+
+        <!-- SLIDE 2: INTRODUCTION -->
+        <section class="slide" id="slide-2">
+            <h2>Introduction & Problem Statement</h2>
+            <div class="grid-2">
+                <div class="card fade-in delay-1">
+                    <h3>Fragmented Records</h3>
+                    <p><strong>95%</strong> of patient history is paper-bound.</p>
+                    <p>When a student moves from Covenant University Clinic to a PHC in Ota, the chart does not follow.</p>
+                    <ul style="margin-top: 1rem;">
+                        <li>Duplication of labs</li>
+                        <li>Re-prescription of contraindicated drugs</li>
+                        <li>Clinician starts from zero</li>
+                    </ul>
+                </div>
+                <div class="card fade-in delay-2">
+                    <h3>The Consequences</h3>
+                    <div class="stat-box">
+                        <span class="stat-number">62%</span>
+                        <p>of adverse referral events traced to "missing historical data"<span class="citation-ref">1<span class="citation-tooltip">Adefunke & Taofeeq (2025). Barriers to Adoption of EHR in Nigerian Healthcare.</span></span></p>
+                    </div>
+                    <p style="margin-top: 1rem; text-align: center;">Referral delay increases by <strong>1.8 days</strong>.</p>
+                </div>
+                <div class="card fade-in delay-3">
+                    <h3>Low EHR Adoption</h3>
+                    <p>Only <strong>28%</strong> of public clinics in Ogun State run a digital system daily<span class="citation-ref">2<span class="citation-tooltip">Mugauri et al. (2025a). A decade of designing and implementing EHR in Sub-Saharan Africa.</span></span>.</p>
+                    <p>Most revert to paper when power or data bundles finish.</p>
+                </div>
+                <div class="card fade-in delay-3">
+                    <h3>Security & Trust Gap</h3>
+                    <p><strong>71%</strong> of directors refused cloud EHR<span class="citation-ref">3<span class="citation-tooltip">Keshta & Odeh (2021). Security and privacy of electronic health records.</span></span>: <em>"We can't tell who opens the file."</em></p>
+                    <p>Patients withhold sensitive history (HIV, mental health) due to fear of hidden breaches.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 3: AIM & OBJECTIVES -->
+        <section class="slide" id="slide-3">
+            <h2>Aim & Objectives</h2>
+            <div style="background: rgba(217, 119, 6, 0.1); padding: 2rem; border-radius: 1rem; margin-bottom: 2rem; text-align: center;" class="fade-in">
+                <h3>The Aim</h3>
+                <p style="font-size: 1.3rem; color: var(--text-color);">"Design & build a proof-of-concept that lets a university clinic and a local PHC swap encrypted records in real time, but <strong>only after the patient says YES via SMS</strong>."</p>
+            </div>
+            
+            <div class="grid-2">
+                <div>
+                    <ul style="list-style: none;">
+                        <li class="card fade-in delay-1" style="margin-bottom: 1rem;">
+                            <strong>Obj 1: Requirements</strong><br>
+                            Survey of 80 simulated users. Ranked list of 27 requirements (e.g., "must work on 3G").
+                        </li>
+                        <li class="card fade-in delay-2" style="margin-bottom: 1rem;">
+                            <strong>Obj 2: Framework</strong><br>
+                            Modified Dubovitskaya et al. (2020)<span class="citation-ref">4<span class="citation-tooltip">Dubovitskaya et al. (2020). ACTION-EHR: Patient-centric blockchain-based EHR.</span></span> patient-centric HIE. Added SMS trigger + consent token.
+                        </li>
+                        <li class="card fade-in delay-3">
+                            <strong>Obj 3: Architecture</strong><br>
+                            UML diagrams. Three actors: Admin, Clinician, Patient. Two nodes.
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <ul style="list-style: none;">
+                        <li class="card fade-in delay-1" style="margin-bottom: 1rem;">
+                            <strong>Obj 4: Implementation</strong><br>
+                            Python 3.11, Flask, PostgreSQL, AES-256, Africa's Talking SMS. 1,000 synthetic patients.
+                        </li>
+                        <li class="card fade-in delay-2">
+                            <strong>Obj 5: Evaluation</strong><br>
+                            Think-aloud sessions, SUS questionnaire. Target: Task time ≤ 2 min, SUS ≥ 70.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 4: LITERATURE REVIEW -->
+        <section class="slide" id="slide-4">
+            <h2>Literature Review Summary</h2>
+            <div class="grid-3">
+                <div class="card fade-in delay-1">
+                    <h3>Infrastructure Barriers</h3>
+                    <p><strong>85%</strong> of rural clinics > 4h power outage/day<span class="citation-ref">5<span class="citation-tooltip">Mugauri et al. (2025b). A decade of designing and implementing EHR in Sub-Saharan Africa.</span></span>.</p>
+                    <p>Bandwidth < 1 Mbps 70% of time.</p>
+                    <p style="color: var(--danger-color);">Cloud sync fails.</p>
+                </div>
+                <div class="card fade-in delay-2">
+                    <h3>Privacy & Trust</h3>
+                    <p><strong>62%</strong> withhold info if they "don't know who will see it"<span class="citation-ref">6<span class="citation-tooltip">Antwi-Boakye et al. (n.d.). Developing Real-Time Security Analytics for EHR Logs.</span></span>.</p>
+                    <p>Centralised EHR breaches (e.g., Ondo State 2023, 18k records leaked).</p>
+                </div>
+                <div class="card fade-in delay-3">
+                    <h3>SMS Potential</h3>
+                    <p>Maternal-health trial (Materia et al.)<span class="citation-ref">7<span class="citation-tooltip">Materia et al. (2023a). Implementing text-messaging to support health behavior change.</span></span>:</p>
+                    <p><strong>94%</strong> replied "YES" within 90s.</p>
+                    <p>Only 0.3% opted out.</p>
+                </div>
+            </div>
+            <div class="card fade-in delay-3" style="margin-top: 2rem;">
+                <h3>The Gap Identified</h3>
+                <p>No LMIC implementation merges <strong>AES-256 + RBAC + Bidirectional SMS consent</strong> in one open-source stack.</p>
+            </div>
+        </section>
+
+        <!-- SLIDE 5: METHODOLOGY -->
+        <section class="slide" id="slide-5">
+            <h2>Methodology Overview</h2>
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <div class="card fade-in delay-1" style="display: flex; gap: 1rem; align-items: center;">
+                    <div style="background: var(--accent-color); color: #000; padding: 0.5rem 1rem; border-radius: 50%; font-weight: bold;">1</div>
+                    <div>
+                        <strong>Requirements</strong>
+                        <p style="margin: 0; font-size: 0.9rem;">PRISMA search (42 papers) → 27 variables. Survey Cronbach α = 0.81.</p>
+                    </div>
+                </div>
+                <div class="card fade-in delay-1" style="display: flex; gap: 1rem; align-items: center;">
+                    <div style="background: var(--accent-color); color: #000; padding: 0.5rem 1rem; border-radius: 50%; font-weight: bold;">2</div>
+                    <div>
+                        <strong>Framework Tweak</strong>
+                        <p style="margin: 0; font-size: 0.9rem;">Added "SMS Consent Manager" micro-service. Validated by experts.</p>
+                    </div>
+                </div>
+                <div class="card fade-in delay-2" style="display: flex; gap: 1rem; align-items: center;">
+                    <div style="background: var(--accent-color); color: #000; padding: 0.5rem 1rem; border-radius: 50%; font-weight: bold;">3</div>
+                    <div>
+                        <strong>Design</strong>
+                        <p style="margin: 0; font-size: 0.9rem;">ISO/IEC 25010 model. Threat modelling via STRIDE (24 abuse cases).</p>
+                    </div>
+                </div>
+                <div class="card fade-in delay-2" style="display: flex; gap: 1rem; align-items: center;">
+                    <div style="background: var(--accent-color); color: #000; padding: 0.5rem 1rem; border-radius: 50%; font-weight: bold;">4</div>
+                    <div>
+                        <strong>Build</strong>
+                        <p style="margin: 0; font-size: 0.9rem;">Agile sprints. Python/Flask. 92% unit test coverage.</p>
+                    </div>
+                </div>
+                <div class="card fade-in delay-3" style="display: flex; gap: 1rem; align-items: center;">
+                    <div style="background: var(--accent-color); color: #000; padding: 0.5rem 1rem; border-radius: 50%; font-weight: bold;">5</div>
+                    <div>
+                        <strong>Evaluate</strong>
+                        <p style="margin: 0; font-size: 0.9rem;">Localhost deployment. Ethics clearance CU/ISTEC/2025/004.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 6: ARCHITECTURE -->
+        <section class="slide" id="slide-6">
+            <h2>System Architecture</h2>
+            
+            <!-- Improved Diagram Container -->
+            <div class="arch-diagram-container" style="display: flex; flex-direction: column; align-items: center; margin: 2rem 0;">
+                
+                <!-- The Diagram -->
+                <div class="arch-diagram" style="width: 100%; max-width: 900px; display: flex; justify-content: space-between; align-items: center; position: relative; padding: 0 1rem;">
+                    
+                    <!-- Node 1: Ota PHC -->
+                    <div class="arch-node" style="text-align: center; z-index: 2; min-width: 160px;">
+                        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🏥</div>
+                        <strong>Ota PHC</strong><br>
+                        <span style="font-size: 0.8rem; color: var(--secondary-color);">Requester Node</span>
+                    </div>
+
+                    <!-- Connection 1: PHC <-> CU -->
+                    <div class="arch-line" style="flex-grow: 1; height: 3px; background: rgba(255, 255, 255, 0.2); position: relative; margin: 0 1rem;">
+                        <div style="position: absolute; top: -25px; width: 100%; text-align: center; font-size: 0.7rem; color: var(--secondary-color); font-family: 'Consolas';">TLS 1.3 Tunnel</div>
+                        <div class="data-packet" id="packet1"></div>
+                        <div class="data-packet" id="packet4" style="background: var(--success-color);"></div>
+                    </div>
+
+                    <!-- Node 2: CU Medical Centre -->
+                    <div class="arch-node" style="text-align: center; z-index: 2; border-color: var(--accent-color); box-shadow: 0 0 15px rgba(217, 119, 6, 0.15); min-width: 160px;">
+                        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🏢</div>
+                        <strong>CU Centre</strong><br>
+                        <span style="font-size: 0.8rem; color: var(--secondary-color);">Data Source</span>
+                    </div>
+
+                    <!-- Connection 2: CU <-> Patient -->
+                    <div class="arch-line" style="flex-grow: 1; height: 3px; background: rgba(255, 255, 255, 0.2); position: relative; margin: 0 1rem;">
+                        <div style="position: absolute; top: -25px; width: 100%; text-align: center; font-size: 0.7rem; color: var(--secondary-color); font-family: 'Consolas';">SMS Gateway</div>
+                        <div class="data-packet" id="packet2"></div>
+                        <div class="data-packet" id="packet3" style="background: var(--success-color);"></div>
+                    </div>
+
+                    <!-- Node 3: Patient -->
+                    <div class="arch-node" style="text-align: center; z-index: 2; min-width: 160px;">
+                        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📱</div>
+                        <strong>Patient</strong><br>
+                        <span style="font-size: 0.8rem; color: var(--secondary-color);">Joshua</span>
+                    </div>
+
+                </div>
+
+                <!-- Status Text -->
+                <div style="margin-top: 2rem; height: 2.5rem; background: rgba(255, 255, 255, 0.05); padding: 0.5rem 1.5rem; border-radius: 2rem; border: 1px solid rgba(255, 255, 255, 0.1); display: flex; align-items: center;">
+                    <p id="arch-status" style="color: var(--accent-color); font-family: 'Consolas', monospace; font-size: 0.9rem; margin: 0;">Waiting for request...</p>
+                </div>
+
+            </div>
+
+            <div class="grid-2">
+                <div class="card fade-in delay-1">
+                    <h3>Security Protocol</h3>
+                    <ul style="font-size: 0.9rem; list-style: none;">
+                        <li style="margin-bottom: 0.5rem;">🔒 <strong>Request:</strong> Signed by Ota PHC's Private Key.</li>
+                        <li style="margin-bottom: 0.5rem;">🔑 <strong>Verification:</strong> CU Node verifies signature.</li>
+                        <li style="margin-bottom: 0.5rem;">📩 <strong>Consent:</strong> Request sent via Africa's Talking API.</li>
+                        <li style="margin-bottom: 0.5rem;">🔓 <strong>Decryption:</strong> Records are decrypted only if consent is granted.</li>
+                    </ul>
+                </div>
+                <div class="card fade-in delay-2">
+                    <h3>Data Flow</h3>
+                    <ol style="font-size: 0.9rem; margin-left: 1.5rem;">
+                        <li>Ota PHC requests "Malaria Test".</li>
+                        <li>CU System holds data but lacks key.</li>
+                        <li>Patient SMS reply completes the key.</li>
+                        <li>Data flows encrypted to Ota PHC.</li>
+                    </ol>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 7: TECHNOLOGIES -->
+        <section class="slide" id="slide-7">
+            <h2>Key Technologies</h2>
+            <div class="grid-3">
+                <div class="card fade-in delay-1">
+                    <h3 style="color: #FFE873;">Python 3.11</h3>
+                    <p>Flask 2.3 + gevent.</p>
+                    <p>Keeps 3G connection open < 2s.</p>
+                </div>
+                <div class="card fade-in delay-1">
+                    <h3 style="color: #336791;">PostgreSQL 15</h3>
+                    <p>pgcrypto for static backup.</p>
+                    <p>Primary AES layer in Python for key control.</p>
+                </div>
+                <div class="card fade-in delay-2">
+                    <h3 style="color: #e2e8f0;">AES-256-CBC</h3>
+                    <p>256-bit random key per record.</p>
+                    <p>PBKDF2 100k iterations.</p>
+                </div>
+                <div class="card fade-in delay-2">
+                    <h3 style="color: #D63AFF;">JWT (RS256)</h3>
+                    <p>Short-lived (5 min) access tokens.</p>
+                    <p>Revocation list in Redis.</p>
+                </div>
+                <div class="card fade-in delay-3">
+                    <h3 style="color: #F97316;">Africa's Talking</h3>
+                    <p>USSD & SMS.</p>
+                    <p>Cheapest route (₦1.98/msg).</p>
+                </div>
+                <div class="card fade-in delay-3">
+                    <h3 style="color: #0db7ed;">Docker</h3>
+                    <p>One-command spin-up.</p>
+                    <p>Nginx reverse-proxy with fail2ban.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 8: DEMO -->
+        <section class="slide" id="slide-8">
+            <h2>Prototype Workflow Demo</h2>
+            <div class="grid-2">
+                <div>
+                    <div class="card fade-in" style="margin-bottom: 1rem;">
+                        <h3>Features</h3>
+                        <ul style="list-style: none;">
+                            <li>✓ Role-based dashboard</li>
+                            <li>✓ Drag-drop PDF/PNG lab upload</li>
+                            <li>✓ Audit trail (Who, What, When, GPS)</li>
+                            <li>✓ Offline queue (SMS queued in SQLite)</li>
+                            <li>✓ English + Yoruba templates</li>
+                        </ul>
+                    </div>
+                    <div class="card fade-in delay-1">
+                        <h3>The Scenario</h3>
+                        <p>1. Ota PHC requests Malaria Test from CU.</p>
+                        <p>2. Patient (Joshua) receives SMS.</p>
+                        <p>3. Patient replies "YES".</p>
+                        <p>4. Data decrypts instantly.</p>
+                        <button onclick="startDemo()" style="margin-top: 1rem; background: var(--accent-color); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 0.5rem; cursor: pointer; font-weight: bold;">Start Interactive Demo</button>
+                    </div>
+                </div>
+                <div class="fade-in delay-2">
+                    <div class="phone-mockup">
+                        <div class="phone-screen">
+                            <div class="phone-header">Messages</div>
+                            <div class="phone-body" id="phoneBody">
+                                <!-- Messages go here -->
+                            </div>
+                            <div class="phone-controls">
+                                <button class="phone-btn btn-yes" onclick="replyYes()">YES</button>
+                                <button class="phone-btn btn-no" onclick="replyNo()">NO</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 9: SCENARIO SCENE 1 & 2 -->
+        <section class="slide" id="slide-9">
+            <h2>Case Study: Joshua's Journey</h2>
+            <div class="grid-2">
+                <div class="card fade-in delay-1">
+                    <h3>Scene 1: Arrival at Ota PHC</h3>
+                    <p><strong>Context:</strong> Joshua was treated for Malaria at CU Medical Centre 6 days ago. Condition worsened.</p>
+                    <p><strong>The Problem:</strong> At Ota PHC, the clinician asks for history. Joshua is unsure of the exact diagnosis or medication.</p>
+                    <p><em>"I think malaria? But I'm not totally sure."</em></p>
+                </div>
+                <div class="card fade-in delay-2">
+                    <h3>Scene 2: Patient Lookup</h3>
+                    <p>Clinician enters Joshua's phone number into <strong>MedicIT</strong>.</p>
+                    <div class="code-block" style="margin-top: 1rem;">
+                        > SEARCH PATIENT: +2348012345678<br>
+                        > FOUND: Joshua N.<br>
+                        > 14 VISITS LOGGED (CU MEDICAL CENTRE)<br>
+                        > LATEST: "Malaria Diagnostic Panel" (6 days ago)<br>
+                        > STATUS: <span style="color: var(--danger-color);">LOCKED / ENCRYPTED</span>
+                    </div>
+                    <p style="margin-top: 1rem; color: var(--danger-color);">"Inter-Hospital Access Requires Patient Approval."</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 10: SCENARIO SCENE 3 -->
+        <section class="slide" id="slide-10">
+            <h2>Scene 3: The Security Handshake</h2>
+            <div class="grid-2">
+                <div class="card fade-in delay-1">
+                    <h3>The Request</h3>
+                    <ol>
+                        <li>Ota PHC Clinician taps <strong>"Request Access"</strong>.</li>
+                        <li>Ota System signs the request.</li>
+                        <li>Cloud routes to CU System.</li>
+                        <li>CU verifies Ota PHC identity.</li>
+                    </ol>
+                </div>
+                <div class="card fade-in delay-2" style="border: 1px solid var(--accent-color);">
+                    <h3>User Action: SMS Consent</h3>
+                    <p>Joshua receives an SMS:</p>
+                    <div style="background: #e2e8f0; color: #334155; padding: 1rem; border-radius: 0.5rem; margin: 1rem 0; font-family: monospace;">
+                        CU Medical Centre wants to share your Malaria Test Result (6 days ago) with Ota PHC.<br>
+                        Approve? YES / NO
+                    </div>
+                    <p>Joshua taps <strong>YES</strong>.</p>
+                </div>
+            </div>
+            <div class="card fade-in delay-3" style="margin-top: 1rem;">
+                <h3>Behind the Scenes</h3>
+                <p>CU System confirms token → Decrypts ONLY the malaria record → Generates <strong>5-minute single-use key</strong>.</p>
+            </div>
+        </section>
+
+        <!-- SLIDE 11: SCENARIO SCENE 4 -->
+        <section class="slide" id="slide-11">
+            <h2>Scene 4: Unlocking the Truth</h2>
+            <div class="grid-2">
+                <div class="card fade-in delay-1">
+                    <h3>The Decrypted Record</h3>
+                    <div class="code-block">
+                        > ACCESS GRANTED<br>
+                        > DECRYPTING PAYLOAD...<br>
+                        --------------------------------<br>
+                        TEST: Malaria Parasite (MP)<br>
+                        RESULT: <span style="color: var(--success-color);">NEGATIVE</span><br>
+                        NOTES: "Consider alternative diagnosis."<br>
+                        LAB MARKERS: Elevated Eosinophils (Allergy)<br>
+                        --------------------------------
+                    </div>
+                </div>
+                <div class="card fade-in delay-2">
+                    <h3>The Revelation</h3>
+                    <p>The clinician sees the negative result and allergy markers.</p>
+                    <p><strong>Diagnosis:</strong> It was never malaria. It is a severe allergic reaction to detergent, worsened by antimalarials.</p>
+                    <div style="margin-top: 1rem; padding: 1rem; background: rgba(34, 197, 94, 0.1); border-radius: 0.5rem;">
+                        <strong>Action Taken:</strong><br>
+                        Stop Antimalarials. Start Antihistamines & Steroids.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 12: SCENARIO SCENE 5 -->
+        <section class="slide" id="slide-12">
+            <h2>Scene 5: Security in Action</h2>
+            <div class="grid-3">
+                <div class="card fade-in delay-1">
+                    <h3>Token Revocation</h3>
+                    <p>Exactly <strong>5 minutes</strong> after access was granted:</p>
+                    <h3 style="color: var(--danger-color); margin-top: 1rem;">ACCESS EXPIRED</h3>
+                    <p>The screen fades. No data remains on Ota PHC devices.</p>
+                </div>
+                <div class="card fade-in delay-2" style="grid-column: span 2;">
+                    <h3>Tamper-Proof Audit Log</h3>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; color: var(--secondary-color);">
+                        <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                            <th style="text-align: left; padding: 0.5rem;">Event</th>
+                            <th style="text-align: left; padding: 0.5rem;">Timestamp</th>
+                            <th style="text-align: left; padding: 0.5rem;">Actor</th>
+                        </tr>
+                        <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                            <td style="padding: 0.5rem;">Request Initiated</td>
+                            <td style="padding: 0.5rem;">10:42:01</td>
+                            <td style="padding: 0.5rem;">Dr. Ota (PHC)</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                            <td style="padding: 0.5rem;">SMS Sent</td>
+                            <td style="padding: 0.5rem;">10:42:03</td>
+                            <td style="padding: 0.5rem;">System (CU Node)</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                            <td style="padding: 0.5rem;">Consent Granted</td>
+                            <td style="padding: 0.5rem;">10:42:45</td>
+                            <td style="padding: 0.5rem;">Patient (Joshua)</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.5rem;">Record Decrypted</td>
+                            <td style="padding: 0.5rem;">10:42:46</td>
+                            <td style="padding: 0.5rem;">System (Ota Node)</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 13: SCENARIO SCENE 6 -->
+        <section class="slide" id="slide-13">
+            <h2>Scene 6: The Outcome</h2>
+            <div style="text-align: center; max-width: 800px; margin: 0 auto;">
+                <div class="card fade-in delay-1" style="margin-bottom: 2rem;">
+                    <h3>"So it wasn't malaria at all?"</h3>
+                    <p>Joshua's father is relieved. Within an hour, Joshua stabilizes.</p>
+                </div>
+                
+                <div class="grid-2">
+                    <div class="card fade-in delay-2">
+                        <h3>Without MedicIT</h3>
+                        <p style="color: var(--danger-color);">Clinician treats for malaria again.</p>
+                        <p>Reaction worsens.</p>
+                        <p>Potential anaphylaxis.</p>
+                    </div>
+                    <div class="card fade-in delay-2" style="border: 1px solid var(--success-color);">
+                        <h3>With MedicIT</h3>
+                        <p style="color: var(--success-color);">Clinician sees history.</p>
+                        <p>Correct diagnosis made.</p>
+                        <p>Patient recovers.</p>
+                    </div>
+                </div>
+
+                <p style="margin-top: 3rem; font-size: 1.2rem; color: var(--accent-color);" class="fade-in delay-3">
+                    "MedicIT Care let us see the full picture quickly."
+                </p>
+            </div>
+        </section>
+
+        <!-- SLIDE 14: EVALUATION -->
+        <section class="slide" id="slide-14">
+            <h2>Evaluation & Testing</h2>
+            <div class="grid-2">
+                <div class="card fade-in delay-1">
+                    <h3>Real-World Simulation</h3>
+                    <p><strong>Environment:</strong> Tested on 3G Network (Airtel Hotspot, ~1.2 Mbps) to mimic rural PHC conditions.</p>
+                    <p><strong>Hardware:</strong> Standard laptop server + Feature phones for SMS consent.</p>
+                </div>
+                <div class="card fade-in delay-1">
+                    <h3>Usability Study</h3>
+                    <p><strong>Participants:</strong> 13 Users (Clinicians & Patients).</p>
+                    <p><strong>Outcome:</strong> System Usability Scale (SUS) score of <strong>78.5</strong> ("Good"), confirming ease of use for non-technical staff.</p>
+                </div>
+                <div class="card fade-in delay-2">
+                    <h3>Performance Metrics</h3>
+                    <p><strong>Latency:</strong> End-to-end decryption took <strong>1.28s</strong> (median).</p>
+                    <p><strong>Reliability:</strong> 100% SMS delivery rate across 39 test scenarios.</p>
+                </div>
+                <div class="card fade-in delay-2">
+                    <h3>Security Validation</h3>
+                    <p><strong>Encryption:</strong> Verified AES-256 decryption only occurs <em>after</em> SMS confirmation.</p>
+                    <p><strong>Access Control:</strong> Confirmed automatic token revocation after exactly 5 minutes.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 15: IMPACT -->
+        <section class="slide" id="slide-15">
+            <h2>Significance & Impact</h2>
+            <div class="grid-2">
+                <div class="card fade-in delay-1">
+                    <h3>Clinical Safety</h3>
+                    <p><strong>Prevents Medical Errors:</strong> As seen with Joshua, access to history prevents dangerous drug interactions.</p>
+                    <p><strong>Continuity of Care:</strong> Seamless handover between University Health Services and rural PHCs.</p>
+                </div>
+                <div class="card fade-in delay-1">
+                    <h3>Patient Empowerment</h3>
+                    <p><strong>Restores Trust:</strong> Patients are no longer passive subjects; they control the data flow.</p>
+                    <p><strong>Inclusivity:</strong> Works on basic feature phones (no smartphone/internet required for patient).</p>
+                </div>
+                <div class="card fade-in delay-2">
+                    <h3>Economic Viability</h3>
+                    <p><strong>Low Cost:</strong> Uses existing SMS infrastructure (₦1.98/msg) vs expensive proprietary portals.</p>
+                    <p><strong>Resource Saving:</strong> Reduces redundant lab tests (saving ≈₦4,500 per referral).</p>
+                </div>
+                <div class="card fade-in delay-2">
+                    <h3>System Scalability</h3>
+                    <p><strong>Infrastructure Agnostic:</strong> Designed for 3G/Edge networks common in semi-urban Nigeria.</p>
+                    <p><strong>Open Standard:</strong> Dockerized FOSS stack ready for deployment in any PHC.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 16: CONCLUSION -->
+        <section class="slide" id="slide-16">
+            <h2>Conclusion & Future Work</h2>
+            <div class="card fade-in delay-1" style="margin-bottom: 2rem; border-left: 4px solid var(--success-color);">
+                <h3>Conclusion</h3>
+                <p>We demonstrated that <strong>AES-256 + RBAC + SMS consent</strong> is technically simple, user-friendly, and regulation-ready.</p>
+                <p>78 SUS & 1.3s latency prove feasibility on 3G.</p>
+            </div>
+
+            <div class="grid-2">
+                <div class="card fade-in delay-2">
+                    <h3>Limitations</h3>
+                    <ul>
+                        <li>Local prototype only.</li>
+                        <li>Synthetic data.</li>
+                        <li>Single-language SMS (English/Yoruba).</li>
+                    </ul>
+                </div>
+                <div class="card fade-in delay-3">
+                    <h3>Future Roadmap</h3>
+                    <ol>
+                        <li>Pilot with Covenant University Health Centre.</li>
+                        <li>Add voice-call consent (Twilio).</li>
+                        <li>Interoperability (HL7 FHIR).</li>
+                        <li>Multi-site trial.</li>
+                    </ol>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 3rem;" class="fade-in delay-3">
+                <h3 style="font-style: italic; color: var(--accent-color);">"Secure sharing doesn't need the cloud – just a pocket-full of keys and a text."</h3>
+            </div>
+        </section>
+
+        <!-- SLIDE 17: REFERENCES -->
+        <section class="slide" id="slide-17">
+            <h2>References</h2>
+            <details class="ref-details" open>
+                <summary class="ref-summary">Bibliography (APA 7th)</summary>
+                <div class="ref-content">
+                    <div class="ref-entry">1. Adefunke, B., & Taofeeq, T. (2025). Barriers to the Adoption of Electronic Health Records in Nigerian Healthcare Systems. <em>Journal of Health Informatics</em>.</div>
+                    <div class="ref-entry">2. Mugauri, H. D., Chimsimbe, M., Shambira, G., et al. (2025a). A decade of designing and implementing electronic health records in Sub-Saharan Africa: a scoping review. <em>Global Health Action, 18</em>. https://doi.org/10.1080/16549716.2025.2492913</div>
+                    <div class="ref-entry">3. Keshta, I., & Odeh, A. (2021). Security and privacy of electronic health records: Concerns and challenges. <em>Egyptian Informatics Journal, 22</em>, 177–183. https://doi.org/10.1016/j.eij.2020.07.003</div>
+                    <div class="ref-entry">4. Dubovitskaya, A., Baig, F., Xu, Z., et al. (2020). ACTION-EHR: Patient-centric blockchain-based electronic health record data management for cancer care. <em>Journal of Medical Internet Research, 22</em>(8). https://doi.org/10.2196/13598</div>
+                    <div class="ref-entry">5. Mugauri, H. D., Chimsimbe, M., Shambira, G., et al. (2025b). A decade of designing and implementing electronic health records in Sub-Saharan Africa: a scoping review. <em>Global Health Action, 18</em>(1).</div>
+                    <div class="ref-entry">6. Antwi-Boakye, R., et al. (n.d.). Developing Real-Time Security Analytics for EHR Logs. <em>International Journal of Engineering Technology</em>.</div>
+                    <div class="ref-entry">7. Materia, F. T., Smyth, J. M., Puoane, T., et al. (2023a). Implementing text-messaging to support and enhance delivery of health behavior change interventions in low- to middle-income countries. <em>BMC Public Health, 23</em>(1). https://doi.org/10.1186/s12889-023-16388-y</div>
+                    <div class="ref-entry">8. Kapitan, D., Fleischer, J., Ihure, C., et al. (2023). Towards a health data commons in LMICs: Demonstrating fair sharing and reuse of health data in sub-Saharan Africa.</div>
+                    <div class="ref-entry">9. Mamuye, A. L., Yilma, T. M., Abdulwahab, A., et al. (2022). Health information exchange policy and standards for digital health systems in Africa: A systematic review. <em>PLOS Digital Health, 1</em>(10). https://doi.org/10.1371/journal.pdig.0000118</div>
+                    <div class="ref-entry">10. Nienaber McKay, A. G., Brand, D., Botes, M., et al. (2024). The regulation of health data sharing in Africa: a comparative study. <em>Journal of Law and the Biosciences, 11</em>(1). https://doi.org/10.1093/jlb/lsad035</div>
+                </div>
+            </details>
+        </section>
+
+    </div>
+
+    <div class="nav-controls">
+        <button class="nav-btn" onclick="prevSlide()">Previous</button>
+        <span id="slide-counter" style="color: white; align-self: center;">1 / 13</span>
+        <button class="nav-btn" onclick="nextSlide()">Next</button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        const progressBar = document.getElementById('progressBar');
+        const counter = document.getElementById('slide-counter');
+
+        function updateSlide() {
+            slides.forEach((slide, index) => {
+                slide.classList.remove('active', 'prev');
+                if (index === currentSlide) {
+                    slide.classList.add('active');
+                } else if (index < currentSlide) {
+                    slide.classList.add('prev');
+                }
+            });
+            
+            // Update progress
+            const progress = ((currentSlide + 1) / totalSlides) * 100;
+            progressBar.style.width = `${progress}%`;
+            counter.innerText = `${currentSlide + 1} / ${totalSlides}`;
+
+            // Trigger animations for specific slides
+            if (currentSlide === 5) { // Architecture slide
+                animateArchitecture();
+            }
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        // Keyboard Navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'Space') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            }
+        });
+
+        // Architecture Animation
+        function animateArchitecture() {
+            const p1 = document.getElementById('packet1');
+            const p2 = document.getElementById('packet2');
+            const p3 = document.getElementById('packet3');
+            const p4 = document.getElementById('packet4');
+            const status = document.getElementById('arch-status');
+            
+            // Reset
+            [p1, p2, p3, p4].forEach(p => {
+                p.style.display = 'none';
+                p.style.animation = 'none';
+            });
+            
+            // Step 1: PHC requests from Uni Health
+            setTimeout(() => {
+                status.innerText = "1. Ota PHC requests record from CU Centre...";
+                p1.style.display = 'block';
+                p1.style.animation = 'transmit 2s linear forwards';
+            }, 500);
+
+            // Step 2: Uni Health requests consent from Patient
+            setTimeout(() => {
+                status.innerText = "2. CU Centre sends SMS to Joshua...";
+                p2.style.display = 'block';
+                p2.style.animation = 'transmit 2s linear forwards';
+            }, 3000);
+
+            // Step 3: Patient grants consent
+            setTimeout(() => {
+                status.innerText = "3. Joshua replies YES (Consent Granted)...";
+                p3.style.display = 'block';
+                p3.style.animation = 'transmit-reverse 2s linear forwards';
+            }, 5500);
+
+            // Step 4: Data sent back to PHC
+            setTimeout(() => {
+                status.innerText = "4. Decrypted Data sent to Ota PHC.";
+                p4.style.display = 'block';
+                p4.style.animation = 'transmit-reverse 2s linear forwards';
+            }, 8000);
+        }
+
+        // Phone Demo Logic
+        function startDemo() {
+            const body = document.getElementById('phoneBody');
+            body.innerHTML = ''; // Clear
+            
+            setTimeout(() => {
+                addMessage("CU Medical Centre wants to share your Malaria Test Result (6 days ago) with Ota PHC. Approve? Reply YES 123456", 'received');
+            }, 1000);
+        }
+
+        function addMessage(text, type) {
+            const body = document.getElementById('phoneBody');
+            const div = document.createElement('div');
+            div.className = `msg msg-${type}`;
+            div.innerText = text;
+            body.appendChild(div);
+            body.scrollTop = body.scrollHeight;
+        }
+
+        function replyYes() {
+            addMessage("YES 123456", 'sent');
+            setTimeout(() => {
+                addMessage("Access Granted. Decrypting Malaria Diagnostic Panel...", 'received');
+            }, 1000);
+        }
+
+        function replyNo() {
+            addMessage("NO", 'sent');
+            setTimeout(() => {
+                addMessage("Access Denied.", 'received');
+            }, 1000);
+        }
+
+        // Initialize
+        updateSlide();
+
+    </script>
+</body>
+</html>
